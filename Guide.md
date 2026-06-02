@@ -18,7 +18,7 @@
 
 ---
 
-## Người 1 — Agent Lead / Optimization Driver
+## Người 1 — Agent Lead - Đạt/ Optimization Driver
 
 Giữ **xương sống** của bài; là **single-writer** của `artifacts/`.
 
@@ -34,7 +34,7 @@ Giữ **xương sống** của bài; là **single-writer** của `artifacts/`.
 
 ---
 
-## Người 2 — Tools & UI Engineer
+## Người 2 - Mạnh — Tools & UI Engineer
 
 Lane build **song song**; mục tiêu duy nhất: **ăn trọn bonus point**.
 
@@ -50,7 +50,7 @@ Lane build **song song**; mục tiêu duy nhất: **ăn trọn bonus point**.
 
 ---
 
-## Người 3 — Eval & Report Lead
+## Người 3 - Thái — Eval & Report Lead
 
 Sở hữu phần **đo lường** và **report** — nơi ra nhiều điểm nhất.
 
