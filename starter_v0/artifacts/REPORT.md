@@ -36,16 +36,29 @@
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
 | clarify | hỏi lại người dùng khi thiếu thông tin | không |
-|  |  |  |
-|  |  |  |
+| timeline | Lấy các tweet/bài đăng gần đây nhất từ một tài khoản Twitter/X cụ thể. Dùng khi … | không |
+| social_search | Tìm kiếm tweet/bài đăng trên Twitter/X theo từ khóa. Dùng khi cần tìm thảo luận … | không |
+| lookup | Tìm kiếm thông tin trên web qua Tavily. Dùng cho tra cứu tin tức (topic=news) ho… | không |
+| fetch | Đọc và trích xuất nội dung từ một URL cụ thể. Dùng khi user cung cấp URL/link tr… | không |
+| format | Định dạng danh sách items đã thu thập thành bản tin markdown. KHÔNG tự tìm dữ li… | không |
+| send  | Gửi tin nhắn qua Telegram Bot. ĐÂY LÀ ACTION TOOL — chỉ thực sự gửi khi confirme… | có |
+| policy | Tìm trong chính sách nội bộ công ty. PHẢI dùng khi user hỏi: policy, quy định, c… | có |
+| papers |  Tìm kiếm bài báo khoa học trên arXiv theo từ khóa. Trả về danh sách papers với t… | có |
+| paper_text  | Tải và trích xuất nội dung text từ một bài báo arXiv (PDF → text). Dùng KHI CÓ S… | có |
+| summarize | Tóm tắt văn bản dài bằng phương pháp extractive (chọn câu quan trọng nhất). Chạy… | có |
+| translate | Dịch văn bản sang ngôn ngữ khác. Dùng khi user yêu cầu dịch nội dung hoặc kết qu… |  có |
+| dedupe | Loại bỏ các item trùng lặp hoặc gần giống nhau trong danh sách kết quả.  | có |
+| rank_item | Sắp xếp và xếp hạng danh sách items theo một trường số (score, favorites, views,… | có |
+| extract_entities | Trích xuất thực thể có cấu trúc từ văn bản: emails, URLs, arXiv IDs, hashtags, @… | có |
+
 
 ## A3. Câu hỏi mẫu để thử
 
 > 3–5 câu hỏi/yêu cầu mẫu để team khác tự thử agent ngay.
 
-1.
-2.
-3.
+1.Gửi thông tin paper cho telegram
+2. Năm một lớn hơn ba năm không
+3. Dịch bài báo sang tiếng Ả Rập
 
 ---
 
