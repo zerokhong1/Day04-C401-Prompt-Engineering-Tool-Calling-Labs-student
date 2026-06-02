@@ -37,6 +37,15 @@ def load_cases(path: Path, phase: str) -> list[dict[str, Any]]:
     return cases
 
 
+def filter_cases(cases: list[dict[str, Any]], limit: int | None = None, ids: list[str] | None = None) -> list[dict[str, Any]]:
+    if ids:
+        ids_set = set(ids)
+        cases = [case for case in cases if case.get("id") in ids_set]
+    if limit is not None:
+        cases = cases[:limit]
+    return cases
+
+
 def validate_case_failure_types(cases: list[dict[str, Any]], path: Path) -> None:
     invalid: list[str] = []
     for case in cases:
@@ -89,12 +98,37 @@ def case_messages(case: dict[str, Any]) -> list[dict[str, str]]:
         )
         content = (
             "Conversation context for a multi-turn eval.\n"
-            "Use earlier turns only as context. Do not answer earlier turns and do not call tools for them.\n\n"
+            "Review the entire turn history. The latest turn is the one you should answer now, "
+            "but earlier turns may contain corrections or details that must still be honored.\n"
+            "Do not try to answer earlier turns directly. Instead, use them only to resolve the current request.\n"
+            "If any earlier turn changes a number, target, account, or request, apply that correction.\n"
+            "If a later turn is only a confirmation like 'still from Elon Musk', keep the corrected value from prior turns.\n\n"
             f"{previous_text}\n\n"
             f"Latest user turn to answer now: {latest}"
         )
         return [{"role": "user", "content": content}]
     return [{"role": "user", "content": case.get("input") or case.get("query", "")}]
+
+
+def assistant_tool_message(response_text: str | None, calls: list[dict[str, Any]]) -> dict[str, str]:
+    call_summary = [{"name": call["name"], "args": call["args"]} for call in calls]
+    content = response_text or "I will call the selected tool(s)."
+    return {
+        "role": "assistant",
+        "content": f"{content}\n\nTOOL_CALLS_JSON:\n{json_text(call_summary)}",
+    }
+
+
+def tool_results_message(events: list[dict[str, Any]]) -> dict[str, str]:
+    return {
+        "role": "user",
+        "content": (
+            "TOOL_RESULTS_JSON:\n"
+            f"{json_text(events, max_chars=24000)}\n\n"
+            "Use only these tool results. If the user asked for a digest and the items are ready, "
+            "call the formatting tool. Otherwise answer the user directly with cited sources when available."
+        ),
+    }
 
 
 def normalize_value(value: Any) -> Any:
@@ -269,6 +303,8 @@ def main() -> None:
     parser.add_argument("--system-prompt", type=Path, default=ARTIFACTS_DIR / "system_prompt.md")
     parser.add_argument("--tools", type=Path, default=ARTIFACTS_DIR / "tools.yaml")
     parser.add_argument("--eval-cases", type=Path, default=DATA_DIR / "eval_base.json")
+    parser.add_argument("--limit", type=int, default=None, help="Run only the first N cases for faster debugging.")
+    parser.add_argument("--case-ids", type=str, default=None, help="Comma-separated list of case IDs to run.")
     parser.add_argument("--runs-dir", type=Path, default=ROOT / "runs")
     args = parser.parse_args()
 
@@ -280,6 +316,10 @@ def main() -> None:
     cases = load_cases(args.eval_cases, args.phase)
     if not cases:
         raise SystemExit(f"No cases matched phase={args.phase!r} in {args.eval_cases}")
+    case_ids = [cid.strip() for cid in args.case_ids.split(",")] if args.case_ids else None
+    cases = filter_cases(cases, limit=args.limit, ids=case_ids)
+    if not cases:
+        raise SystemExit("No cases selected after applying --limit/--case-ids.")
 
     tool_declarations = load_tool_declarations(args.tools)
     validate_expected_tools(cases, tool_declarations, args.eval_cases)
@@ -288,16 +328,58 @@ def main() -> None:
     results: list[dict[str, Any]] = []
     for case in cases:
         print(f"Running {case['id']}...", flush=True)
-        agent = ResearchAgent(provider, system_prompt=system_prompt, tools=openai_tools, model=args.model)
+        messages = [{"role": "system", "content": system_prompt}, *case_messages(case)]
+        tool_choice = None if case["expect"].get("no_tool") else "required"
+        working_messages = list(messages)
+        all_tool_calls: list[dict[str, Any]] = []
+        tool_results: list[dict[str, Any]] = []
+        assistant_text: str | None = None
+
         try:
-            tool_choice = None if case["expect"].get("no_tool") else "required"
-            run = agent.run(case_messages(case), tool_choice=tool_choice)
-            calls = [{"name": call.name, "args": call.args} for call in run.tool_calls]
-            result = evaluate_phase_b(case, calls, run.text)
-            tool_results = run.tool_results
+            for round_index in range(1, 5):
+                response = provider.complete(
+                    working_messages,
+                    openai_tools,
+                    model=selected_model,
+                    temperature=0.0,
+                    tool_choice=tool_choice,
+                )
+                if not response.tool_calls:
+                    assistant_text = response.text
+                    break
+
+                tool_call_dicts = [{"name": call.name, "args": call.args} for call in response.tool_calls]
+                all_tool_calls.extend(tool_call_dicts)
+                working_messages.append(assistant_tool_message(response.text, tool_call_dicts))
+
+                non_clarification_events: list[dict[str, Any]] = []
+                for call in response.tool_calls:
+                    func = TOOL_FUNCTIONS.get(call.name)
+                    if not func:
+                        event = {"tool": call.name, "args": call.args, "result": {"error": "unknown_tool"}}
+                    else:
+                        try:
+                            result = func(**call.args)
+                        except Exception as exc:
+                            result = {"error": type(exc).__name__, "message": str(exc)}
+                        event = {"tool": call.name, "args": call.args, "result": result}
+                    tool_results.append(event)
+                    if isinstance(event.get("result"), dict) and event["result"].get("awaiting_user"):
+                        assistant_text = event["result"].get("question") or call.args.get("question") or "Bạn bổ sung thêm thông tin nhé."
+                        raise StopIteration
+                    non_clarification_events.append(event)
+
+                working_messages.append(tool_results_message(non_clarification_events))
+            else:
+                assistant_text = f"Stopped after 4 tool rounds. Inspect the transcript for details."
+
+            result = evaluate_phase_b(case, all_tool_calls, assistant_text)
+        except StopIteration:
+            result = evaluate_phase_b(case, all_tool_calls, assistant_text)
         except Exception as exc:
-            calls = []
+            all_tool_calls = []
             tool_results = []
+            assistant_text = None
             result = {
                 "passed": False,
                 "failure_type": "provider_error",

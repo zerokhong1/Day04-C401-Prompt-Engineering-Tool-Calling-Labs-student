@@ -15,58 +15,63 @@
 - Base tool routing accuracy:
 - Base argument accuracy:
 - Group eval run file:
-- Group eval accuracy:
+- Group eval accuracy (targeted subset):
 - Chat transcript file:
 
 ## Version Evidence
 
-Fill from `artifacts/version_log.csv` and `runs/*.json`.
+Extracted from run artifacts and incremental edits:
 
 | Version | Changed Artifact | Hypothesis | Metric Before | Metric After | Run File |
 |---|---|---|---:|---:|---|
-| v0 | baseline |  |  |  |  |
-| v1 |  |  |  |  |  |
-| v2 |  |  |  |  |  |
-| v3 |  |  |  |  |  |
+| v0 | | | | | |
+| v1 | | | | | |
+| v2 | | | | | |
+| v3 | | | | | |
 
 ## Failure Analysis
 
-Use actual failures from `results[*].result.failures`.
+Observed failures and fixes implemented during debugging and targeted re-runs.
 
 | Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| | | | | |
 
 ## Team Eval Cases
 
-List at least 5 cases added to `data/eval_group.json`.
+- Additional cases added to `data/eval_group.json`:
+- Notable cases and rationale:
 
-| Case ID | What It Tests | Expected Tool/Behavior | Result |
-|---|---|---|---|
-|  |  |  |  |
+## Live Chat / Run Evidence
 
-## Live Chat Evidence
+Use the generated run JSON artifacts for evidence of behavior and tool calls.
 
-Use `transcripts/*.transcript.json`.
-
-| Turn | User Request | Tool Calls | Version Evidence | Outcome |
-|---|---|---|---|---|
-|  |  |  |  |  |
+| Run | Notes |
+|---|---|
+| | |
+| | |
 
 ## Bonus Evidence
 
-Only fill if your team did bonus.
-
-| Bonus | Evidence File | What Worked | Risk / Guardrail |
-|---|---|---|---|
-| send (Telegram) |  |  |  |
-| arXiv/company policy |  |  |  |
-| UI |  |  |  |
+- 
 
 ## Reflection
 
-- Which fixes belonged in `system_prompt.md`?
-- Which fixes belonged in `tools.yaml`?
-- Which failure needed manual review instead of automatic grading?
-- What would you improve next?
+- Which fixes belonged in `system_prompt.md`?:
+	- 
+
+- Which fixes belonged in `tools.yaml`?:
+	- 
+
+- Which failure needed manual review instead of automatic grading?:
+	- 
+
+- What would you improve next?:
+	- 
+
+## Next steps
+
+- 
+- 
+
 

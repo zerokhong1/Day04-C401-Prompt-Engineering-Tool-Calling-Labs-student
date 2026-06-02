@@ -22,7 +22,7 @@ def read_url(url: str = "") -> dict[str, Any]:
         response.raise_for_status()
         data = response.json().get("data", {})
         meta = data.get("metadata", {}) or {}
-        return {"tool": "read_url", "url": url, "items": [{
+        return {"tool": "fetch", "url": url, "items": [{
             "title": meta.get("title") or url,
             "url": meta.get("sourceURL") or url,
             "source": domain(url),
